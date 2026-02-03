@@ -4,6 +4,8 @@ from rest_framework import status
 
 from .models import Dataset
 from .utils import analyze_csv
+from django.http import FileResponse
+from .pdf_utils import generate_summary_pdf
 
 
 @api_view(['POST'])
@@ -65,3 +67,12 @@ def upload_history(request):
     ]
 
     return Response(history, status=status.HTTP_200_OK)
+
+@api_view(["GET"])
+def download_latest_pdf(request):
+    latest = Dataset.objects.order_by("-uploaded_at").first()
+    if not latest:
+        return Response({"error": "No data available"}, status=404)
+
+    pdf_buffer = generate_summary_pdf(latest.summary)
+    return FileResponse(pdf_buffer, as_attachment=True, filename="equipment_report.pdf")
